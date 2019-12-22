@@ -1,14 +1,19 @@
 import multiprocessing
 import datetime
 import time
+import os
 
 import tinydb
 import telebot
 from telebot import types
 from config import config
 
+if not os.path.exists(config['DB_PATH']):
+    os.makedirs(os.path.dirname(config['DB_PATH']), exist_ok=True)
+
 db = tinydb.TinyDB(config['DB_PATH'])
 parent_query = tinydb.Query()
+
 
 bot = telebot.TeleBot(config['BOT']['TOKEN'])
 
