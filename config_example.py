@@ -8,7 +8,8 @@ config = {
         'TOKEN': 'your_token',
         'START_MESSAGE': 'Hello world',
         'ASK_MESSAGE': 'How are you?',
-        'ACCEPTED': 'Great!'
+        'ACCEPTED': 'Great!',
+        'ADDED': 'Admin added you!'
     },
-    'ADMIN_ID': 'admin_id'
+    'ADMINS': ['admin_id', 'another_one']
 }

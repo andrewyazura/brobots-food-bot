@@ -54,7 +54,12 @@ def send_food_orders():
     parents_str = '\n'.join([parent['name']
                              for parent in db if parent.get('order_food', True)])
 
-    bot.send_message(config['ADMIN_ID'], 'Їжу замовляють:\n' + parents_str)
+    send_to_admins('Їжу замовляють:\n' + parents_str)
+
+
+def send_to_admins(message_text, args=(), kwargs={}):
+    for admin in config['ADMINS']:
+        bot.send_message(admin, message_text, *args, **kwargs)
 
 
 get_data_process = multiprocessing.Process(
@@ -68,14 +73,14 @@ def start_menu(message: telebot.types.Message):
     bot.reply_to(message, config['BOT']['START_MESSAGE'])
     u = message.chat
 
-    if u.id not in [parent['telegram_id'] for parent in db] and str(u.id) != config['ADMIN_ID']:
+    if str(u.id) not in [parent['telegram_id'] for parent in db] and str(u.id) not in config['ADMINS']:
         add_parent_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_parent_keyboard.add(
             types.InlineKeyboardButton(text='Add to database', callback_data=f'{u.id}:{u.first_name} {u.last_name}'))
 
-        bot.send_message(config['ADMIN_ID'],
-                         f'New user: {u.id}, {u.username}, {u.first_name}, {u.last_name}',
-                         reply_markup=add_parent_keyboard)
+        send_to_admins(
+            f'New user: {u.id}, {u.username}, {u.first_name}, {u.last_name}',
+            kwargs={'reply_markup': add_parent_keyboard})
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -92,7 +97,7 @@ def inline_button(callback):
     elif ':' in data:
         p_id, p_name = data.split(':')
         db.insert({'telegram_id': p_id, 'name': p_name})
-        bot.send_message(p_id, config['ADDED'])
+        bot.send_message(p_id, config['BOT']['ADDED'])
 
 
 if __name__ == '__main__':
