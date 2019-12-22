@@ -14,7 +14,6 @@ if not os.path.exists(config['DB_PATH']):
 db = tinydb.TinyDB(config['DB_PATH'])
 parent_query = tinydb.Query()
 
-
 bot = telebot.TeleBot(config['BOT']['TOKEN'])
 
 
@@ -93,6 +92,7 @@ def inline_button(callback):
     elif ':' in data:
         p_id, p_name = data.split(':')
         db.insert({'telegram_id': p_id, 'name': p_name})
+        bot.send_message(p_id, config['ADDED'])
 
 
 if __name__ == '__main__':
