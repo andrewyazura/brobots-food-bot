@@ -13,9 +13,16 @@ parent_query = tinydb.Query()
 bot = telebot.TeleBot(config['BOT']['TOKEN'])
 
 
-def execute_at(wake_time: datetime.time, callback, args=(), kwargs={}):
+def is_business_day(date):
+    return date.weekday() < 5
+
+
+def execute_at(wake_time: datetime.time, callback, only_business, args=(), kwargs={}):
     while True:
         now = datetime.datetime.now()
+
+        if only_business and not is_business_day(now):
+            continue
 
         if now.hour == wake_time.hour \
                 and now.minute == wake_time.minute \
@@ -47,9 +54,9 @@ def send_food_orders():
 
 
 get_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['ASK_TIME'], get_food_orders))
+    target=execute_at, args=(config['ASK_TIME'], get_food_orders, True))
 send_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['SEND_TIME'], send_food_orders))
+    target=execute_at, args=(config['SEND_TIME'], send_food_orders, True))
 
 
 @bot.message_handler(commands=['start', 'help'])
