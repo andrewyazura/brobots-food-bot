@@ -9,6 +9,8 @@ config = {
         'TOKEN': 'your_token',
         'START_MESSAGE': 'Hello world',
         'ASK_MESSAGE': 'How are you?',
+        'ORDER_TRUE': 'Orderd!',
+        'ORDER_FALSE': 'Not ordered',
         'ACCEPTED': 'Great!',
         'ADDED': 'Admin added you!',
         'NO_PERMISSION': 'You\'re not an admin',

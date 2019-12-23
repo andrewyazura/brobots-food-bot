@@ -156,7 +156,16 @@ def inline_button(callback):
 
         db.update({'order_food': True if order == '1' else False},
                   parent_query.telegram_id == p_id)
-        bot.send_message(callback.from_user.id, config['BOT']['ACCEPTED'])
+
+        mess = config['BOT']['ASK_MESSAGE'] + \
+            (config['BOT']['ORDER_TRUE'] if order == '1'
+             else config['BOT']['ORDER_FALSE'])
+
+        bot.edit_message_text(
+            mess,
+            callback.message.json['chat']['id'],
+            callback.message.json['message_id'],
+            reply_markup=generate_order_keyboard(callback.from_user.id))
 
     elif ':' in data:
         p_id, p_name = data.split(':')
