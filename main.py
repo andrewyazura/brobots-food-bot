@@ -163,6 +163,11 @@ def inline_button(callback):
         bot.send_message(callback.from_user.id, config['BOT']['SUCCESS'])
 
 
+@bot.message_handler(func=lambda x: True)
+def garbage_handler(message: types.Message):
+    bot.send_message(message.chat.id, config['BOT']['GARBAGE_RESPONSE'])
+
+
 if __name__ == '__main__':
     get_data_process.start()
     send_data_process.start()
