@@ -17,6 +17,14 @@ parent_query = tinydb.Query()
 bot = telebot.TeleBot(config['BOT']['TOKEN'])
 
 
+def is_admin(u_id):
+    return str(u_id) in config['ADMINS']
+
+
+def is_parent(u_id):
+    return str(u_id) in [p['telegram_id'] for p in db]
+
+
 def is_business_day(date):
     return date.weekday() < 5
 
@@ -36,7 +44,7 @@ def execute_at(wake_time: datetime.time, callback, only_business, args=(), kwarg
 
 
 def get_food_orders():
-    for parent in db.all():
+    for parent in db:
         kb = generate_order_keyboard(parent['telegram_id'])
 
         bot.send_message(parent['telegram_id'],
@@ -45,10 +53,8 @@ def get_food_orders():
 
 
 def send_food_orders():
-    parents_str = '\n'.join([parent['name']
-                             for parent in db if parent.get('order_food', True)])
-
-    send_to_admins('Їжу замовляють:\n' + parents_str)
+    send_to_admins('Їжу замовляють:\n' +
+                   generate_parents_str(only_order_true=True))
 
 
 def send_to_admins(message_text, args=(), kwargs={}):
@@ -66,6 +72,24 @@ def generate_order_keyboard(parent_id):
     return keyboard_options
 
 
+def generate_parents_str(only_order_true=False, with_ids=False):
+    p_list = []
+
+    if with_ids:
+        p_list = '\n'.join([parent['telegram_id'] + ' - ' + parent['name'] for parent in db
+                            if not only_order_true or parent.get('order_food', config['DEFAULT_ORDER'])])
+
+    else:
+        p_list = '\n'.join([parent['name'] for parent in db
+                            if not only_order_true or parent.get('order_food', config['DEFAULT_ORDER'])])
+
+    return p_list if len(p_list) else 'Пусто...'
+
+
+def extract_args(message_text: str):
+    return message_text.split()[1:]
+
+
 get_data_process = multiprocessing.Process(
     target=execute_at, args=(config['ASK_TIME'], get_food_orders, True))
 send_data_process = multiprocessing.Process(
@@ -73,11 +97,11 @@ send_data_process = multiprocessing.Process(
 
 
 @bot.message_handler(commands=['start', 'help'])
-def start_menu(message: telebot.types.Message):
+def start_menu(message: types.Message):
     bot.reply_to(message, config['BOT']['START_MESSAGE'])
     u = message.chat
 
-    if str(u.id) not in [parent['telegram_id'] for parent in db] and str(u.id) not in config['ADMINS']:
+    if not is_parent(u.id) and not is_admin(u.id):
         add_parent_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_parent_keyboard.add(
             types.InlineKeyboardButton(text='Add to database', callback_data=f'{u.id}:{u.first_name} {u.last_name}'))
@@ -85,6 +109,39 @@ def start_menu(message: telebot.types.Message):
         send_to_admins(
             f'New user: {u.id}, {u.username}, {u.first_name}, {u.last_name}',
             kwargs={'reply_markup': add_parent_keyboard})
+
+
+@bot.message_handler(commands=['users'])
+def manage_users(message: types.Message):
+    u_id = message.chat.id
+
+    if not is_admin(u_id):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
+    bot.send_message(u_id, 'Список користувачів:\n' +
+                     generate_parents_str(with_ids=True))
+
+
+@bot.message_handler(commands=['del_user'])
+def delete_user(message: types.Message):
+    command_args = extract_args(message.text)
+    u_id = message.chat.id
+
+    if not is_admin(u_id):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
+    if len(command_args) != 1:
+        bot.send_message(u_id, config['BOT']['INVALID_SYNTAX'])
+        return
+
+    if is_parent(command_args[0]):
+        db.remove(tinydb.where('telegram_id') == command_args[0])
+        bot.send_message(u_id, config['BOT']['SUCCESS'])
+
+    else:
+        bot.send_message(u_id, config['BOT']['NO_USER'])
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -102,6 +159,7 @@ def inline_button(callback):
         p_id, p_name = data.split(':')
         db.insert({'telegram_id': p_id, 'name': p_name})
         bot.send_message(p_id, config['BOT']['ADDED'])
+        bot.send_message(callback.from_user.id, config['BOT']['SUCCESS'])
 
 
 if __name__ == '__main__':
