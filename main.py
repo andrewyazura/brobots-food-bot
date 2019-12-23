@@ -37,17 +37,11 @@ def execute_at(wake_time: datetime.time, callback, only_business, args=(), kwarg
 
 def get_food_orders():
     for parent in db.all():
-        p_id = parent['telegram_id']
-
-        keyboard_options = types.InlineKeyboardMarkup(row_width=2)
-        keyboard_options.add(types.InlineKeyboardButton(
-            text='Так!', callback_data=f'{p_id}.1'))
-        keyboard_options.add(types.InlineKeyboardButton(
-            text='Ні...', callback_data=f'{p_id}.0'))
+        kb = generate_order_keyboard(parent['telegram_id'])
 
         bot.send_message(parent['telegram_id'],
                          config['BOT']['ASK_MESSAGE'],
-                         reply_markup=keyboard_options)
+                         reply_markup=kb)
 
 
 def send_food_orders():
@@ -60,6 +54,16 @@ def send_food_orders():
 def send_to_admins(message_text, args=(), kwargs={}):
     for admin in config['ADMINS']:
         bot.send_message(admin, message_text, *args, **kwargs)
+
+
+def generate_order_keyboard(parent_id):
+    keyboard_options = types.InlineKeyboardMarkup(row_width=2)
+    keyboard_options.add(types.InlineKeyboardButton(
+        text='Так!', callback_data=f'{parent_id}.1'))
+    keyboard_options.add(types.InlineKeyboardButton(
+        text='Ні...', callback_data=f'{parent_id}.0'))
+
+    return keyboard_options
 
 
 get_data_process = multiprocessing.Process(
