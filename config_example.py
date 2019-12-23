@@ -14,7 +14,19 @@ config = {
         'NO_PERMISSION': 'You\'re not an admin',
         'INVALID_SYNTAX': 'Error',
         'SUCCESS': 'Everything is fine!',
-        'NO_USER': 'No such user'
+        'NO_USER': 'No such user',
+        'ORDERS_LIST_TITLE': 'Orders:\n',
+        'USERS_LIST_TITLE': 'Users\n',
+        'EMPTY': 'Empty...',
+        'NEW_USER': 'New:',
+        'KEYBOARDS': {
+            'YES': 'Yep!',
+            'NO': 'No...',
+            'ADD_TO_DB': 'Add'
+        }
     },
     'ADMINS': ['admin_id', 'another_one']
 }
+
+if __name__ == '__main__':
+    print(config)

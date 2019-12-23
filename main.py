@@ -53,7 +53,7 @@ def get_food_orders():
 
 
 def send_food_orders():
-    send_to_admins('Їжу замовляють:\n' +
+    send_to_admins(config['BOT']['ORDERS_LIST_TITLE'] +
                    generate_parents_str(only_order_true=True))
 
 
@@ -65,9 +65,9 @@ def send_to_admins(message_text, args=(), kwargs={}):
 def generate_order_keyboard(parent_id):
     keyboard_options = types.InlineKeyboardMarkup(row_width=2)
     keyboard_options.add(types.InlineKeyboardButton(
-        text='Так!', callback_data=f'{parent_id}.1'))
+        text=config['BOT']['KEYBOARDS']['YES'], callback_data=f'{parent_id}.1'))
     keyboard_options.add(types.InlineKeyboardButton(
-        text='Ні...', callback_data=f'{parent_id}.0'))
+        text=config['BOT']['KEYBOARDS']['NO'], callback_data=f'{parent_id}.0'))
 
     return keyboard_options
 
@@ -83,7 +83,7 @@ def generate_parents_str(only_order_true=False, with_ids=False):
         p_list = '\n'.join([parent['name'] for parent in db
                             if not only_order_true or parent.get('order_food', config['DEFAULT_ORDER'])])
 
-    return p_list if len(p_list) else 'Пусто...'
+    return p_list if len(p_list) else config['BOT']['EMPTY']
 
 
 def extract_args(message_text: str):
@@ -104,10 +104,11 @@ def start_menu(message: types.Message):
     if not is_parent(u.id) and not is_admin(u.id):
         add_parent_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_parent_keyboard.add(
-            types.InlineKeyboardButton(text='Add to database', callback_data=f'{u.id}:{u.first_name} {u.last_name}'))
+            types.InlineKeyboardButton(text=config['BOT']['KEYBOARDS']['ADD_TO_DB'], callback_data=f'{u.id}:{u.first_name} {u.last_name}'))
 
         send_to_admins(
-            f'New user: {u.id}, {u.username}, {u.first_name}, {u.last_name}',
+            config['BOT']['NEW_USER'] +
+            f' {u.id}, {u.username}, {u.first_name}, {u.last_name}',
             kwargs={'reply_markup': add_parent_keyboard})
 
 
@@ -119,7 +120,7 @@ def manage_users(message: types.Message):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
-    bot.send_message(u_id, 'Список користувачів:\n' +
+    bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
                      generate_parents_str(with_ids=True))
 
 
