@@ -102,13 +102,15 @@ def start_menu(message: types.Message):
     u = message.chat
 
     if not is_parent(u.id) and not is_admin(u.id):
+        user_str = u.first_name + (u.last_name if u.last_name else '')
+
         add_parent_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_parent_keyboard.add(
-            types.InlineKeyboardButton(text=config['BOT']['KEYBOARDS']['ADD_TO_DB'], callback_data=f'{u.id}:{u.first_name} {u.last_name}'))
+            types.InlineKeyboardButton(text=config['BOT']['KEYBOARDS']['ADD_TO_DB'], callback_data=f'{u.id}:{user_str}'))
 
         send_to_admins(
             config['BOT']['NEW_USER'] +
-            f' {u.id}, {u.username}, {u.first_name}, {u.last_name}',
+            f' {u.id}, {u.username}, {user_str}',
             kwargs={'reply_markup': add_parent_keyboard})
 
 
