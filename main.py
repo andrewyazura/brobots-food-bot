@@ -106,7 +106,10 @@ def start_menu(message: types.Message):
 
         add_parent_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_parent_keyboard.add(
-            types.InlineKeyboardButton(text=config['BOT']['KEYBOARDS']['ADD_TO_DB'], callback_data=f'{u.id}:{user_str}'))
+            types.InlineKeyboardButton(
+                text=config['BOT']['KEYBOARDS']['ADD_TO_DB'],
+                callback_data=f'{u.id}:{user_str}'
+            ))
 
         send_to_admins(
             config['BOT']['NEW_USER'] +
@@ -157,12 +160,12 @@ def inline_button(callback):
         db.update({'order_food': True if order == '1' else False},
                   parent_query.telegram_id == p_id)
 
-        mess = config['BOT']['ASK_MESSAGE'] + \
+        new_text = config['BOT']['ASK_MESSAGE'] + \
             (config['BOT']['ORDER_TRUE'] if order == '1'
              else config['BOT']['ORDER_FALSE'])
 
         bot.edit_message_text(
-            mess,
+            new_text,
             callback.message.json['chat']['id'],
             callback.message.json['message_id'],
             reply_markup=generate_order_keyboard(callback.from_user.id))
