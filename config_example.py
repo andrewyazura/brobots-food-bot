@@ -1,7 +1,7 @@
 from datetime import time
 
 config = {
-    'DB_PATH': './db/parents.json',
+    'DB_PATH': './db/users.json',
     'ASK_TIME': time(0, 0, 0),
     'SEND_TIME': time(1, 42, 6),
     'DEFAULT_ORDER': False,
