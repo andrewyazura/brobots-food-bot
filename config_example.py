@@ -21,6 +21,7 @@ config = {
         'USERS_LIST_TITLE': 'Users\n',
         'EMPTY': 'Empty...',
         'NEW_USER': 'New:',
+        'ALREADY_EXISTS': 'User is already in DB',
         'GARBAGE_RESPONSE': 'Stop sending this!',
         'KEYBOARDS': {
             'YES': 'Yep!',
