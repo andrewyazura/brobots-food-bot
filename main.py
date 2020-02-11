@@ -172,6 +172,11 @@ def inline_button(callback):
 
     elif ':' in data:
         p_id, p_name = data.split(':')
+        if db.search(parent_query.name == p_name):
+            bot.send_message(callback.from_user.id,
+                             config['BOT']['ALREADY_EXISTS'])
+            return
+
         db.insert({'telegram_id': p_id, 'name': p_name})
         bot.send_message(p_id, config['BOT']['ADDED'])
         bot.send_message(callback.from_user.id, config['BOT']['SUCCESS'])
