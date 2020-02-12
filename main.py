@@ -12,7 +12,7 @@ if not os.path.exists(config['DB_PATH']):
     os.makedirs(os.path.dirname(config['DB_PATH']), exist_ok=True)
 
 db = tinydb.TinyDB(config['DB_PATH'])
-parent_query = tinydb.Query()
+user_query = tinydb.Query()
 
 bot = telebot.TeleBot(config['BOT']['TOKEN'])
 
@@ -21,7 +21,7 @@ def is_admin(u_id):
     return str(u_id) in config['ADMINS']
 
 
-def is_parent(u_id):
+def is_user(u_id):
     return str(u_id) in [p['telegram_id'] for p in db]
 
 
@@ -44,17 +44,17 @@ def execute_at(wake_time: datetime.time, callback, only_business, args=(), kwarg
 
 
 def get_food_orders():
-    for parent in db:
-        kb = generate_order_keyboard(parent['telegram_id'])
+    for user in db:
+        kb = generate_order_keyboard(user['telegram_id'])
 
-        bot.send_message(parent['telegram_id'],
+        bot.send_message(user['telegram_id'],
                          config['BOT']['ASK_MESSAGE'],
                          reply_markup=kb)
 
 
 def send_food_orders():
     send_to_admins(config['BOT']['ORDERS_LIST_TITLE'] +
-                   generate_parents_str(only_order_true=True))
+                   generate_users_str(only_order_true=True))
 
 
 def send_to_admins(message_text, args=(), kwargs={}):
@@ -62,26 +62,26 @@ def send_to_admins(message_text, args=(), kwargs={}):
         bot.send_message(admin, message_text, *args, **kwargs)
 
 
-def generate_order_keyboard(parent_id):
+def generate_order_keyboard(user_id):
     keyboard_options = types.InlineKeyboardMarkup(row_width=2)
     keyboard_options.add(types.InlineKeyboardButton(
-        text=config['BOT']['KEYBOARDS']['YES'], callback_data=f'{parent_id}.1'))
+        text=config['BOT']['KEYBOARDS']['YES'], callback_data=f'{user_id}.1'))
     keyboard_options.add(types.InlineKeyboardButton(
-        text=config['BOT']['KEYBOARDS']['NO'], callback_data=f'{parent_id}.0'))
+        text=config['BOT']['KEYBOARDS']['NO'], callback_data=f'{user_id}.0'))
 
     return keyboard_options
 
 
-def generate_parents_str(only_order_true=False, with_ids=False):
+def generate_users_str(only_order_true=False, with_ids=False):
     p_list = []
 
     if with_ids:
-        p_list = '\n'.join([parent['telegram_id'] + ' - ' + parent['name'] for parent in db
-                            if not only_order_true or parent.get('order_food', config['DEFAULT_ORDER'])])
+        p_list = '\n'.join([user['telegram_id'] + ' - ' + user['name'] for user in db
+                            if not only_order_true or user.get('order_food', config['DEFAULT_ORDER'])])
 
     else:
-        p_list = '\n'.join([parent['name'] for parent in db
-                            if not only_order_true or parent.get('order_food', config['DEFAULT_ORDER'])])
+        p_list = '\n'.join([user['name'] for user in db
+                            if not only_order_true or user.get('order_food', config['DEFAULT_ORDER'])])
 
     return p_list if len(p_list) else config['BOT']['EMPTY']
 
@@ -101,17 +101,20 @@ def start_menu(message: types.Message):
     bot.reply_to(message, config['BOT']['START_MESSAGE'])
     u = message.chat
 
-    if not is_parent(u.id) and not is_admin(u.id):
+    if not is_user(u.id) and not is_admin(u.id):
         user_str = u.first_name + (u.last_name if u.last_name else '')
 
-        add_parent_keyboard = types.InlineKeyboardMarkup(row_width=1)
-        add_parent_keyboard.add(
-            types.InlineKeyboardButton(text=config['BOT']['KEYBOARDS']['ADD_TO_DB'], callback_data=f'{u.id}:{user_str}'))
+        add_user_keyboard = types.InlineKeyboardMarkup(row_width=1)
+        add_user_keyboard.add(
+            types.InlineKeyboardButton(
+                text=config['BOT']['KEYBOARDS']['ADD_TO_DB'],
+                callback_data=f'{u.id}:{user_str}'
+            ))
 
         send_to_admins(
             config['BOT']['NEW_USER'] +
             f' {u.id}, {u.username}, {user_str}',
-            kwargs={'reply_markup': add_parent_keyboard})
+            kwargs={'reply_markup': add_user_keyboard})
 
 
 @bot.message_handler(commands=['users'])
@@ -123,7 +126,7 @@ def manage_users(message: types.Message):
         return
 
     bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
-                     generate_parents_str(with_ids=True))
+                     generate_users_str(with_ids=True))
 
 
 @bot.message_handler(commands=['del_user'])
@@ -139,7 +142,7 @@ def delete_user(message: types.Message):
         bot.send_message(u_id, config['BOT']['INVALID_SYNTAX'])
         return
 
-    if is_parent(command_args[0]):
+    if is_user(command_args[0]):
         db.remove(tinydb.where('telegram_id') == command_args[0])
         bot.send_message(u_id, config['BOT']['SUCCESS'])
 
@@ -155,20 +158,24 @@ def inline_button(callback):
         p_id, order = data.split('.')
 
         db.update({'order_food': True if order == '1' else False},
-                  parent_query.telegram_id == p_id)
+                  user_query.telegram_id == p_id)
 
-        mess = config['BOT']['ASK_MESSAGE'] + \
+        new_text = config['BOT']['ASK_MESSAGE'] + \
             (config['BOT']['ORDER_TRUE'] if order == '1'
              else config['BOT']['ORDER_FALSE'])
 
         bot.edit_message_text(
-            mess,
+            new_text,
             callback.message.json['chat']['id'],
-            callback.message.json['message_id'],
-            reply_markup=generate_order_keyboard(callback.from_user.id))
+            callback.message.json['message_id'])
 
     elif ':' in data:
         p_id, p_name = data.split(':')
+        if db.search(user_query.name == p_name):
+            bot.send_message(callback.from_user.id,
+                             config['BOT']['ALREADY_EXISTS'])
+            return
+
         db.insert({'telegram_id': p_id, 'name': p_name})
         bot.send_message(p_id, config['BOT']['ADDED'])
         bot.send_message(callback.from_user.id, config['BOT']['SUCCESS'])

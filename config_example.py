@@ -1,7 +1,7 @@
 from datetime import time
 
 config = {
-    'DB_PATH': './db/parents.json',
+    'DB_PATH': './db/users.json',
     'ASK_TIME': time(0, 0, 0),
     'SEND_TIME': time(1, 42, 6),
     'DEFAULT_ORDER': False,
@@ -21,6 +21,7 @@ config = {
         'USERS_LIST_TITLE': 'Users\n',
         'EMPTY': 'Empty...',
         'NEW_USER': 'New:',
+        'ALREADY_EXISTS': 'User is already in DB',
         'GARBAGE_RESPONSE': 'Stop sending this!',
         'KEYBOARDS': {
             'YES': 'Yep!',
@@ -32,4 +33,6 @@ config = {
 }
 
 if __name__ == '__main__':
-    print(config)
+    from pprint import pprint
+
+    pprint(config)
