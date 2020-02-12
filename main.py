@@ -167,8 +167,7 @@ def inline_button(callback):
         bot.edit_message_text(
             new_text,
             callback.message.json['chat']['id'],
-            callback.message.json['message_id'],
-            reply_markup=generate_order_keyboard(callback.from_user.id))
+            callback.message.json['message_id'])
 
     elif ':' in data:
         p_id, p_name = data.split(':')
