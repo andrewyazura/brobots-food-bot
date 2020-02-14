@@ -86,6 +86,10 @@ def generate_users_str(only_order_true=False, with_ids=False):
     return p_list if len(p_list) else config['BOT']['EMPTY']
 
 
+def clear_orders():
+    db.update({'order_food': False})
+
+
 def extract_args(message_text: str):
     return message_text.split()[1:]
 
@@ -138,6 +142,13 @@ def send_orders(message: types.Message):
 
     bot.send_message(u_id, config['BOT']['ORDERS_LIST_TITLE'] +
                      generate_users_str(only_order_true=True))
+
+
+@bot.message_handler(commands=['clear_orders'])
+def clear(message: types.Message):
+    clear_orders()
+
+    bot.send_message(message.chat.id, config['BOT']['SUCCESS'])
 
 
 @bot.message_handler(commands=['users'])
