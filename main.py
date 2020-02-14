@@ -122,6 +122,11 @@ def start_menu(message: types.Message):
             kwargs={'reply_markup': add_user_keyboard})
 
 
+@bot.message_handler(commands=['commands'])
+def admin_menu(message: types.Message):
+    bot.send_message(message.chat.id, config['BOT']['ADMIN_COMMANDS'])
+
+
 @bot.message_handler(commands=['ask_now'])
 def request_orders(message: types.Message):
     u_id = message.chat.id
