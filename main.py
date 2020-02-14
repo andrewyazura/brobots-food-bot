@@ -136,6 +136,7 @@ def request_orders(message: types.Message):
         return
 
     get_food_orders()
+    bot.send_message(u_id, config['BOT']['SUCCESS'])
 
 
 @bot.message_handler(commands=['orders'])
