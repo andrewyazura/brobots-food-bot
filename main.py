@@ -117,6 +117,17 @@ def start_menu(message: types.Message):
             kwargs={'reply_markup': add_user_keyboard})
 
 
+@bot.message_handler(commands=['ask_now'])
+def request_orders(message: types.Message):
+    u_id = message.chat.id
+
+    if not is_admin(u_id):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
+    get_food_orders()
+
+
 @bot.message_handler(commands=['orders'])
 def send_orders(message: types.Message):
     u_id = message.chat.id
