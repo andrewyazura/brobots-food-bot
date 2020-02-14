@@ -1,11 +1,12 @@
-import multiprocessing
 import datetime
-import time
+import multiprocessing
 import os
+import time
 
-import tinydb
 import telebot
+import tinydb
 from telebot import types
+
 from config import config
 
 if not os.path.exists(config['DB_PATH']):
