@@ -27,7 +27,14 @@ config = {
             'YES': 'Yep!',
             'NO': 'No...',
             'ADD_TO_DB': 'Add'
-        }
+        },
+        'ADMIN_COMMANDS': '''Список команд адміністратора:
+/users - список користувачів
+/del_user <id> - видалити користувача
+/orders - замовлення на цей момент
+/clear_orders - очистити замовлення
+/ask_now - запросити замовлення зараз
+        '''
     },
     'ADMINS': ['admin_id', 'another_one']
 }

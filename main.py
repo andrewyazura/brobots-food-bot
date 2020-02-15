@@ -1,11 +1,12 @@
-import multiprocessing
 import datetime
-import time
+import multiprocessing
 import os
+import time
 
-import tinydb
 import telebot
+import tinydb
 from telebot import types
+
 from config import config
 
 if not os.path.exists(config['DB_PATH']):
@@ -86,6 +87,10 @@ def generate_users_str(only_order_true=False, with_ids=False):
     return p_list if len(p_list) else config['BOT']['EMPTY']
 
 
+def clear_orders():
+    db.update({'order_food': False})
+
+
 def extract_args(message_text: str):
     return message_text.split()[1:]
 
@@ -115,6 +120,42 @@ def start_menu(message: types.Message):
             config['BOT']['NEW_USER'] +
             f' {u.id}, {u.username}, {user_str}',
             kwargs={'reply_markup': add_user_keyboard})
+
+
+@bot.message_handler(commands=['commands'])
+def admin_menu(message: types.Message):
+    bot.send_message(message.chat.id, config['BOT']['ADMIN_COMMANDS'])
+
+
+@bot.message_handler(commands=['ask_now'])
+def request_orders(message: types.Message):
+    u_id = message.chat.id
+
+    if not is_admin(u_id):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
+    get_food_orders()
+    bot.send_message(u_id, config['BOT']['SUCCESS'])
+
+
+@bot.message_handler(commands=['orders'])
+def send_orders(message: types.Message):
+    u_id = message.chat.id
+
+    if not is_admin(u_id):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
+    bot.send_message(u_id, config['BOT']['ORDERS_LIST_TITLE'] +
+                     generate_users_str(only_order_true=True))
+
+
+@bot.message_handler(commands=['clear_orders'])
+def clear(message: types.Message):
+    clear_orders()
+
+    bot.send_message(message.chat.id, config['BOT']['SUCCESS'])
 
 
 @bot.message_handler(commands=['users'])
