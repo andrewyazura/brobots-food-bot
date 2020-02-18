@@ -3,6 +3,7 @@ import multiprocessing
 import os
 import time
 import logging
+from collections import Counter
 
 import telebot
 import tinydb
@@ -91,15 +92,17 @@ def generate_order_keyboard(user_id):
 
 
 def generate_users_str(with_orders=False, with_ids=False):
-    p_list = ''
-
     p_list = '\n'.join([((user['telegram_id'] + ' - ') if with_ids else '')
                         + user['name'] +
                         ((' - ' + str(user.get('order_food',
                                                config['DEFAULT_ORDER']))) if with_orders else '')
                         for user in db])
 
-    return p_list if len(p_list) else config['BOT']['EMPTY']
+    total_orders = Counter(p_list.split())['True']
+
+    return (p_list + '\n\n' + config['BOT']['TOTAL_USERS'] + str(len(db)) +
+            (('\n' + config['BOT']['TOTAL_ORDERS'] + str(total_orders)) if with_orders else '')) \
+        if len(p_list) else config['BOT']['EMPTY']
 
 
 def clear_orders():
@@ -170,7 +173,7 @@ def send_orders(message: types.Message):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
-    bot.send_message(u_id, config['BOT']['ORDERS_LIST_TITLE'] +
+    bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
                      generate_users_str(with_orders=True))
 
     logging.info('/orders from %s:%s', message.chat.id,
