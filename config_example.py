@@ -17,22 +17,28 @@ config = {
         'INVALID_SYNTAX': 'Error',
         'SUCCESS': 'Everything is fine!',
         'NO_USER': 'No such user',
-        'ORDERS_LIST_TITLE': 'Orders:\n',
         'USERS_LIST_TITLE': 'Users\n',
         'EMPTY': 'Empty...',
         'NEW_USER': 'New:',
         'ALREADY_EXISTS': 'User is already in DB',
         'GARBAGE_RESPONSE': 'Stop sending this!',
+        'TOTAL_USERS': 'In total: ',
+        'TOTAL_ORDERS': 'Orders in total: ',
         'KEYBOARDS': {
             'YES': 'Yep!',
             'NO': 'No...',
             'ADD_TO_DB': 'Add'
         },
         'ADMIN_COMMANDS': '''Список команд адміністратора:
+
 /users - список користувачів
+
 /del_user <id> - видалити користувача
+
 /orders - замовлення на цей момент
+
 /clear_orders - очистити замовлення
+
 /ask_now - запросити замовлення зараз
         '''
     },
