@@ -67,7 +67,7 @@ def get_food_orders():
 
 def send_food_orders():
     send_to_admins(config['BOT']['ORDERS_LIST_TITLE'] +
-                   generate_users_str(only_order_true=True))
+                   generate_users_str(with_orders=True))
 
     logging.info('Sent list of orders to admins')
 
@@ -90,16 +90,14 @@ def generate_order_keyboard(user_id):
     return keyboard_options
 
 
-def generate_users_str(only_order_true=False, with_ids=False):
-    p_list = []
+def generate_users_str(with_orders=False, with_ids=False):
+    p_list = ''
 
-    if with_ids:
-        p_list = '\n'.join([user['telegram_id'] + ' - ' + user['name'] for user in db
-                            if not only_order_true or user.get('order_food', config['DEFAULT_ORDER'])])
-
-    else:
-        p_list = '\n'.join([user['name'] for user in db
-                            if not only_order_true or user.get('order_food', config['DEFAULT_ORDER'])])
+    p_list = '\n'.join([((user['telegram_id'] + ' - ') if with_ids else '')
+                        + user['name'] +
+                        ((' - ' + str(user.get('order_food',
+                                               config['DEFAULT_ORDER']))) if with_orders else '')
+                        for user in db])
 
     return p_list if len(p_list) else config['BOT']['EMPTY']
 
@@ -173,7 +171,7 @@ def send_orders(message: types.Message):
         return
 
     bot.send_message(u_id, config['BOT']['ORDERS_LIST_TITLE'] +
-                     generate_users_str(only_order_true=True))
+                     generate_users_str(with_orders=True))
 
     logging.info('/orders from %s:%s', message.chat.id,
                  message.chat.first_name)
