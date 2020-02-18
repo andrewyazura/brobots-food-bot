@@ -2,6 +2,7 @@ import datetime
 import multiprocessing
 import os
 import time
+import logging
 
 import telebot
 import tinydb
@@ -16,6 +17,13 @@ db = tinydb.TinyDB(config['DB_PATH'])
 user_query = tinydb.Query()
 
 bot = telebot.TeleBot(config['BOT']['TOKEN'])
+
+logging.getLogger("requests").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+
+logging.basicConfig(filename='bot.log',
+                    format='%(asctime)s %(levelname)s: %(message)s',
+                    level=logging.DEBUG)
 
 
 def is_admin(u_id):
@@ -42,6 +50,7 @@ def execute_at(wake_time: datetime.time, callback, only_business, args=(), kwarg
                 and now.second == wake_time.second:
             time.sleep(1)  # without delay it triggers many times a second
             callback(*args, **kwargs)
+            logging.info('Executing %s at %r', callback.__name__, wake_time)
 
 
 def get_food_orders():
@@ -52,15 +61,23 @@ def get_food_orders():
                          config['BOT']['ASK_MESSAGE'],
                          reply_markup=kb)
 
+        logging.info('Sent request to %s; id: %s',
+                     user['name'], user['telegram_id'])
+
 
 def send_food_orders():
     send_to_admins(config['BOT']['ORDERS_LIST_TITLE'] +
                    generate_users_str(only_order_true=True))
 
+    logging.info('Sent list of orders to admins')
+
 
 def send_to_admins(message_text, args=(), kwargs={}):
     for admin in config['ADMINS']:
         bot.send_message(admin, message_text, *args, **kwargs)
+
+        logging.info('Sent message to admin (%s); message: %s',
+                     admin, message_text)
 
 
 def generate_order_keyboard(user_id):
@@ -89,6 +106,7 @@ def generate_users_str(only_order_true=False, with_ids=False):
 
 def clear_orders():
     db.update({'order_food': False})
+    logging.info('Cleared orders')
 
 
 def extract_args(message_text: str):
@@ -105,10 +123,11 @@ send_data_process = multiprocessing.Process(
 def start_menu(message: types.Message):
     bot.reply_to(message, config['BOT']['START_MESSAGE'])
     u = message.chat
+    user_str = u.first_name + (u.last_name if u.last_name else '')
+
+    logging.info('/start or /help from %s:%s', u.id, user_str)
 
     if not is_user(u.id) and not is_admin(u.id):
-        user_str = u.first_name + (u.last_name if u.last_name else '')
-
         add_user_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_user_keyboard.add(
             types.InlineKeyboardButton(
@@ -126,6 +145,9 @@ def start_menu(message: types.Message):
 def admin_menu(message: types.Message):
     bot.send_message(message.chat.id, config['BOT']['ADMIN_COMMANDS'])
 
+    logging.info('/commands from %s:%s', message.chat.id,
+                 message.chat.first_name)
+
 
 @bot.message_handler(commands=['ask_now'])
 def request_orders(message: types.Message):
@@ -137,6 +159,9 @@ def request_orders(message: types.Message):
 
     get_food_orders()
     bot.send_message(u_id, config['BOT']['SUCCESS'])
+
+    logging.info('/ask_now from %s:%s', message.chat.id,
+                 message.chat.first_name)
 
 
 @bot.message_handler(commands=['orders'])
@@ -150,12 +175,18 @@ def send_orders(message: types.Message):
     bot.send_message(u_id, config['BOT']['ORDERS_LIST_TITLE'] +
                      generate_users_str(only_order_true=True))
 
+    logging.info('/orders from %s:%s', message.chat.id,
+                 message.chat.first_name)
+
 
 @bot.message_handler(commands=['clear_orders'])
 def clear(message: types.Message):
     clear_orders()
 
     bot.send_message(message.chat.id, config['BOT']['SUCCESS'])
+
+    logging.info('/clear_orders from %s:%s', message.chat.id,
+                 message.chat.first_name)
 
 
 @bot.message_handler(commands=['users'])
@@ -168,6 +199,9 @@ def manage_users(message: types.Message):
 
     bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
                      generate_users_str(with_ids=True))
+
+    logging.info('/users from %s:%s', message.chat.id,
+                 message.chat.first_name)
 
 
 @bot.message_handler(commands=['del_user'])
@@ -190,6 +224,9 @@ def delete_user(message: types.Message):
     else:
         bot.send_message(u_id, config['BOT']['NO_USER'])
 
+    logging.info('/del_user from %s:%s', message.chat.id,
+                 message.chat.first_name)
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def inline_button(callback):
@@ -210,8 +247,12 @@ def inline_button(callback):
             callback.message.json['chat']['id'],
             callback.message.json['message_id'])
 
+        logging.info('Received order response; id: %s; order: %r',
+                     p_id, bool(order))
+
     elif ':' in data:
         p_id, p_name = data.split(':')
+
         if db.search(user_query.name == p_name):
             bot.send_message(callback.from_user.id,
                              config['BOT']['ALREADY_EXISTS'])
@@ -221,10 +262,15 @@ def inline_button(callback):
         bot.send_message(p_id, config['BOT']['ADDED'])
         bot.send_message(callback.from_user.id, config['BOT']['SUCCESS'])
 
+        logging.info('Added user to db; data: %s:%s', p_name, p_id)
+
 
 @bot.message_handler(func=lambda x: True)
 def garbage_handler(message: types.Message):
     bot.send_message(message.chat.id, config['BOT']['GARBAGE_RESPONSE'])
+
+    logging.info('Garbage message from %s:%s', message.chat.id,
+                 message.chat.first_name)
 
 
 if __name__ == '__main__':

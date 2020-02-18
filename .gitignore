@@ -248,3 +248,4 @@ pip-selfcheck.json
 
 config.py
 db/
+bot.log
