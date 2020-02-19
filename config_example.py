@@ -9,21 +9,29 @@ config = {
         'TOKEN': 'your_token',
         'START_MESSAGE': 'Hello world',
         'ASK_MESSAGE': 'How are you?',
+
         'ORDER_TRUE': 'Orderd!',
         'ORDER_FALSE': 'Not ordered',
+
         'ACCEPTED': 'Great!',
         'ADDED': 'Admin added you!',
-        'NO_PERMISSION': 'You\'re not an admin',
-        'INVALID_SYNTAX': 'Error',
+
         'SUCCESS': 'Everything is fine!',
-        'NO_USER': 'No such user',
+        'NO_PERMISSION': 'You\'re not an admin',
+
+        'INVALID_SYNTAX': 'Error',
+
         'USERS_LIST_TITLE': 'Users\n',
-        'EMPTY': 'Empty...',
         'NEW_USER': 'New:',
-        'ALREADY_EXISTS': 'User is already in DB',
-        'GARBAGE_RESPONSE': 'Stop sending this!',
         'TOTAL_USERS': 'In total: ',
         'TOTAL_ORDERS': 'Orders in total: ',
+        'EMPTY': 'Empty...',
+
+        'ALREADY_EXISTS': 'User is already in DB',
+        'NO_USER': 'No such user',
+
+        'GARBAGE_RESPONSE': 'Stop sending this!',
+
         'KEYBOARDS': {
             'YES': 'Yep!',
             'NO': 'No...',
