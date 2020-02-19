@@ -22,8 +22,8 @@ bot = telebot.TeleBot(config['BOT']['TOKEN'])
 logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-logging.basicConfig(filename='bot.log',
-                    format='%(asctime)s %(levelname)s: %(message)s',
+logging.basicConfig(filename=config['LOG_PATH'],
+                    format=config['LOG_FORMAT'],
                     level=logging.DEBUG)
 
 
@@ -160,10 +160,11 @@ def send_logs(message: types.Message):
 
     logging.info('/logs from %s:%s', u_id, message.chat.first_name)
 
-    doc = open('bot.log', 'rb')
+    doc = open(config['LOG_PATH'], 'rb')
     bot.send_document(u_id, doc)
 
-    logging.info('Sent bot.log file to %s:%s', u_id, message.chat.first_name)
+    logging.info('Sent %s file to %s:%s',
+                 config['LOG_PATH'], u_id, message.chat.first_name)
 
 
 @bot.message_handler(commands=['ask_now'])

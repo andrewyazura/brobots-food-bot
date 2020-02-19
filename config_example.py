@@ -2,9 +2,14 @@ from datetime import time
 
 config = {
     'DB_PATH': './db/users.json',
+    'LOG_PATH': './bot.log',
+    'LOG_FORMAT': '%(asctime)s %(levelname)s: %(message)s',
+
     'ASK_TIME': time(0, 0, 0),
     'SEND_TIME': time(1, 42, 6),
+
     'DEFAULT_ORDER': False,
+
     'BOT': {
         'TOKEN': 'your_token',
         'START_MESSAGE': 'Hello world',
