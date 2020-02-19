@@ -150,6 +150,22 @@ def admin_menu(message: types.Message):
                  message.chat.first_name)
 
 
+@bot.message_handler(commands=['logs'])
+def send_logs(message: types.Message):
+    u_id = message.chat.id
+
+    if not is_admin(u_id):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
+    logging.info('/logs from %s:%s', u_id, message.chat.first_name)
+
+    doc = open('bot.log', 'rb')
+    bot.send_document(u_id, doc)
+
+    logging.info('Sent bot.log file to %s:%s', u_id, message.chat.first_name)
+
+
 @bot.message_handler(commands=['ask_now'])
 def request_orders(message: types.Message):
     u_id = message.chat.id

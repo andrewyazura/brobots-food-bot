@@ -29,17 +29,17 @@ config = {
             'NO': 'No...',
             'ADD_TO_DB': 'Add'
         },
-        'ADMIN_COMMANDS': '''Список команд адміністратора:
+        'ADMIN_COMMANDS': '''Commands:
 
-/users - список користувачів
+/users - all users
 
-/del_user <id> - видалити користувача
+/del_user <id> - remove user by id
 
-/orders - замовлення на цей момент
+/orders - all orders
 
-/clear_orders - очистити замовлення
+/clear_orders - clear orders
 
-/ask_now - запросити замовлення зараз
+/ask_now - send order requests now
         '''
     },
     'ADMINS': ['admin_id', 'another_one']
