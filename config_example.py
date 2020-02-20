@@ -53,6 +53,8 @@ config = {
 /clear_orders - clear orders
 
 /ask_now - send order requests now
+
+/logs - view logs file
         '''
     },
     'ADMINS': ['admin_id', 'another_one']

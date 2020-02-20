@@ -9,6 +9,7 @@ import telebot
 import tinydb
 from telebot import types
 
+from services import *
 from config import config
 
 if not os.path.exists(config['DB_PATH']):
@@ -26,102 +27,10 @@ logging.basicConfig(filename=config['LOG_PATH'],
                     format=config['LOG_FORMAT'],
                     level=logging.DEBUG)
 
-
-def is_admin(u_id):
-    return str(u_id) in config['ADMINS']
-
-
-def is_user(u_id):
-    return str(u_id) in [p['telegram_id'] for p in db]
-
-
-def is_business_day(date):
-    return date.weekday() < 5
-
-
-def execute_at(wake_time: datetime.time, callback, only_business, args=(), kwargs={}):
-    while True:
-        now = datetime.datetime.now()
-
-        if only_business and not is_business_day(now):
-            continue
-
-        if now.hour == wake_time.hour \
-                and now.minute == wake_time.minute \
-                and now.second == wake_time.second:
-            time.sleep(1)  # without delay it triggers many times a second
-            callback(*args, **kwargs)
-            logging.info('Executing %s at %r', callback.__name__, wake_time)
-
-
-def get_food_orders():
-    for user in db:
-        kb = generate_order_keyboard(user['telegram_id'])
-
-        try:
-            bot.send_message(user['telegram_id'],
-                             config['BOT']['ASK_MESSAGE'],
-                             reply_markup=kb)
-        except:
-            logging.info('Unable to send message to %s; id: %s',
-                         user['name'], user['telegram_id'])
-
-        logging.info('Sent request to %s; id: %s',
-                     user['name'], user['telegram_id'])
-
-
-def send_food_orders():
-    send_to_admins(config['BOT']['ORDERS_LIST_TITLE'] +
-                   generate_users_str(with_orders=True))
-
-    logging.info('Sent list of orders to admins')
-
-
-def send_to_admins(message_text, args=(), kwargs={}):
-    for admin in config['ADMINS']:
-        bot.send_message(admin, message_text, *args, **kwargs)
-
-        logging.info('Sent message to admin (%s); message: %s',
-                     admin, message_text)
-
-
-def generate_order_keyboard(user_id):
-    keyboard_options = types.InlineKeyboardMarkup(row_width=2)
-    keyboard_options.add(types.InlineKeyboardButton(
-        text=config['BOT']['KEYBOARDS']['YES'], callback_data=f'{user_id}.1'))
-    keyboard_options.add(types.InlineKeyboardButton(
-        text=config['BOT']['KEYBOARDS']['NO'], callback_data=f'{user_id}.0'))
-
-    return keyboard_options
-
-
-def generate_users_str(with_orders=False, with_ids=False):
-    p_list = '\n'.join([((user['telegram_id'] + ' - ') if with_ids else '')
-                        + user['name'] +
-                        ((' - ' + str(user.get('order_food',
-                                               config['DEFAULT_ORDER']))) if with_orders else '')
-                        for user in db])
-
-    total_orders = Counter(p_list.split())['True']
-
-    return (p_list + '\n\n' + config['BOT']['TOTAL_USERS'] + str(len(db)) +
-            (('\n' + config['BOT']['TOTAL_ORDERS'] + str(total_orders)) if with_orders else '')) \
-        if len(p_list) else config['BOT']['EMPTY']
-
-
-def clear_orders():
-    db.update({'order_food': False})
-    logging.info('Cleared orders')
-
-
-def extract_args(message_text: str):
-    return message_text.split()[1:]
-
-
 get_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['ASK_TIME'], get_food_orders, True))
+    target=execute_at, args=(config['ASK_TIME'], get_food_orders, True, (bot, db, config)))
 send_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['SEND_TIME'], send_food_orders, True))
+    target=execute_at, args=(config['SEND_TIME'], send_food_orders, True, (bot, db, config)))
 
 
 @bot.message_handler(commands=['start', 'help'])
@@ -132,7 +41,7 @@ def start_menu(message: types.Message):
 
     logging.info('/start or /help from %s:%s', u.id, user_str)
 
-    if not is_user(u.id) and not is_admin(u.id):
+    if not is_user(u.id, db) and not is_admin(u.id, config):
         add_user_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_user_keyboard.add(
             types.InlineKeyboardButton(
@@ -140,10 +49,10 @@ def start_menu(message: types.Message):
                 callback_data=f'{u.id}:{user_str}'
             ))
 
-        send_to_admins(
-            config['BOT']['NEW_USER'] +
-            f' {u.id}, {u.username}, {user_str}',
-            kwargs={'reply_markup': add_user_keyboard})
+        send_to_admins(bot, config,
+                       config['BOT']['NEW_USER'] +
+                       f' {u.id}, {u.username}, {user_str}',
+                       kwargs={'reply_markup': add_user_keyboard})
 
 
 @bot.message_handler(commands=['commands'])
@@ -158,7 +67,7 @@ def admin_menu(message: types.Message):
 def send_logs(message: types.Message):
     u_id = message.chat.id
 
-    if not is_admin(u_id):
+    if not is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
@@ -175,11 +84,11 @@ def send_logs(message: types.Message):
 def request_orders(message: types.Message):
     u_id = message.chat.id
 
-    if not is_admin(u_id):
+    if not is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
-    get_food_orders()
+    get_food_orders(bot, db, config)
     bot.send_message(u_id, config['BOT']['SUCCESS'])
 
     logging.info('/ask_now from %s:%s', message.chat.id,
@@ -190,12 +99,12 @@ def request_orders(message: types.Message):
 def send_orders(message: types.Message):
     u_id = message.chat.id
 
-    if not is_admin(u_id):
+    if not is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
     bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
-                     generate_users_str(with_orders=True))
+                     generate_users_str(db, config, with_orders=True))
 
     logging.info('/orders from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -203,7 +112,7 @@ def send_orders(message: types.Message):
 
 @bot.message_handler(commands=['clear_orders'])
 def clear(message: types.Message):
-    clear_orders()
+    clear_orders(db)
 
     bot.send_message(message.chat.id, config['BOT']['SUCCESS'])
 
@@ -215,12 +124,12 @@ def clear(message: types.Message):
 def manage_users(message: types.Message):
     u_id = message.chat.id
 
-    if not is_admin(u_id):
+    if not is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
     bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
-                     generate_users_str(with_ids=True))
+                     generate_users_str(db, config, with_ids=True))
 
     logging.info('/users from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -231,7 +140,7 @@ def delete_user(message: types.Message):
     command_args = extract_args(message.text)
     u_id = message.chat.id
 
-    if not is_admin(u_id):
+    if not is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
@@ -239,7 +148,7 @@ def delete_user(message: types.Message):
         bot.send_message(u_id, config['BOT']['INVALID_SYNTAX'])
         return
 
-    if is_user(command_args[0]):
+    if is_user(command_args[0], db):
         db.remove(tinydb.where('telegram_id') == command_args[0])
         bot.send_message(u_id, config['BOT']['SUCCESS'])
 
