@@ -58,9 +58,13 @@ def get_food_orders():
     for user in db:
         kb = generate_order_keyboard(user['telegram_id'])
 
-        bot.send_message(user['telegram_id'],
-                         config['BOT']['ASK_MESSAGE'],
-                         reply_markup=kb)
+        try:
+            bot.send_message(user['telegram_id'],
+                             config['BOT']['ASK_MESSAGE'],
+                             reply_markup=kb)
+        except:
+            logging.info('Unable to send message to %s; id: %s',
+                         user['name'], user['telegram_id'])
 
         logging.info('Sent request to %s; id: %s',
                      user['name'], user['telegram_id'])
