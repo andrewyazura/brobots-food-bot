@@ -62,12 +62,13 @@ def get_food_orders():
             bot.send_message(user['telegram_id'],
                              config['BOT']['ASK_MESSAGE'],
                              reply_markup=kb)
+
+            logging.info('Sent request to %s; id: %s',
+                         user['name'], user['telegram_id'])
+
         except:
             logging.info('Unable to send message to %s; id: %s',
                          user['name'], user['telegram_id'])
-
-        logging.info('Sent request to %s; id: %s',
-                     user['name'], user['telegram_id'])
 
 
 def send_food_orders():
