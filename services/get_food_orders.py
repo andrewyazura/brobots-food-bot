@@ -1,8 +1,12 @@
 import logging
 from services.generate_order_keyboard import generate_order_keyboard
+from services.clear_orders import clear_orders
 
 
-def get_food_orders(bot, db, config):
+def get_food_orders(bot, db, config, clear=False):
+    if clear:
+        clear_orders(db)
+
     for user in db:
         kb = generate_order_keyboard(user['telegram_id'], config)
 

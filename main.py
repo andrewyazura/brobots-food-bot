@@ -28,7 +28,7 @@ logging.basicConfig(filename=config['LOG_PATH'],
                     level=logging.DEBUG)
 
 get_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['ASK_TIME'], get_food_orders, True, (bot, db, config)))
+    target=execute_at, args=(config['ASK_TIME'], get_food_orders, True, (bot, db, config, True)))
 send_data_process = multiprocessing.Process(
     target=execute_at, args=(config['SEND_TIME'], send_food_orders, True, (bot, db, config)))
 
@@ -88,7 +88,7 @@ def request_orders(message: types.Message):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
-    get_food_orders(bot, db, config)
+    get_food_orders(bot, db, config, True)
     bot.send_message(u_id, config['BOT']['SUCCESS'])
 
     logging.info('/ask_now from %s:%s', message.chat.id,
