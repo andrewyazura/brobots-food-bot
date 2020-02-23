@@ -57,7 +57,8 @@ def start_menu(message: types.Message):
 
 @bot.message_handler(commands=['commands'])
 def admin_menu(message: types.Message):
-    bot.send_message(message.chat.id, config['BOT']['ADMIN_COMMANDS'])
+    bot.send_message(
+        message.chat.id, config['BOT']['ADMIN_COMMANDS'], parse_mode='markdown')
 
     logging.info('/commands from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -83,12 +84,18 @@ def send_logs(message: types.Message):
 @bot.message_handler(commands=['ask_now'])
 def request_orders(message: types.Message):
     u_id = message.chat.id
+    args = extract_args(message.text)
+    clear = args[0] if args else '0'
 
     if not is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
-    get_food_orders(bot, db, config, True)
+    if not clear.isdigit():
+        bot.send_message(u_id, config['BOT']['INVALID_SYNTAX'])
+        return
+
+    get_food_orders(bot, db, config, int(clear))
     bot.send_message(u_id, config['BOT']['SUCCESS'])
 
     logging.info('/ask_now from %s:%s', message.chat.id,

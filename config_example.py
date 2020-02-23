@@ -46,13 +46,16 @@ config = {
 
 /users - all users
 
-/del_user <id> - remove user by id
+/del\_user <id> - remove user by id
 
 /orders - all orders
 
-/clear_orders - clear orders
+/clear\_orders - clear orders
 
-/ask_now - send order requests now
+/ask\_now _<clear>_ - request orders now
+_clear_:
+    1 - clear orders before request
+    0 - don't clear
 
 /logs - view logs file
         '''
