@@ -166,6 +166,24 @@ def delete_user(message: types.Message):
                  message.chat.first_name)
 
 
+@bot.message_handler(commands=['report', 'troubleshoot'])
+def troubleshoot(message: types.Message):
+    command_args = extract_args(message.text, (' ', 1))
+    chat = message.chat
+
+    if len(command_args) != 1:
+        bot.send_message(chat.id, config['BOT']['INVALID_SYNTAX'])
+        return
+
+    bot.send_message(chat.id, config['BOT']['TROUBLESHOOTING'])
+
+    send_to_developers(bot, config, command_args[0] +
+                       '\n{0}:{1}'.format(chat.id, chat.username))
+
+    logging.info('/report or /troubleshoot from %s:%s', message.chat.id,
+                 message.chat.first_name)
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def inline_button(callback):
     data = callback.data
