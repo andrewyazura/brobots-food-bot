@@ -42,6 +42,10 @@ config = {
             'NO': 'No...',
             'ADD_TO_DB': 'Add'
         },
+        'HELP_MESSAGE': '''Commands:
+
+/report <message> - report bug in bot
+        ''',
         'ADMIN_COMMANDS': '''Commands:
 
 /users - all users

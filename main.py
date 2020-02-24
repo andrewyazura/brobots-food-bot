@@ -33,13 +33,13 @@ send_data_process = multiprocessing.Process(
     target=execute_at, args=(config['SEND_TIME'], send_food_orders, True, (bot, db, config)))
 
 
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=['start'])
 def start_menu(message: types.Message):
     bot.reply_to(message, config['BOT']['START_MESSAGE'])
     u = message.chat
     user_str = u.first_name + (u.last_name if u.last_name else '')
 
-    logging.info('/start or /help from %s:%s', u.id, user_str)
+    logging.info('/start from %s:%s', u.id, user_str)
 
     if not is_user(u.id, db) and not is_admin(u.id, config):
         add_user_keyboard = types.InlineKeyboardMarkup(row_width=1)
@@ -53,6 +53,13 @@ def start_menu(message: types.Message):
                        config['BOT']['NEW_USER'] +
                        f' {u.id}, {u.username}, {user_str}',
                        kwargs={'reply_markup': add_user_keyboard})
+
+
+@bot.message_handler(commands=['help'])
+def help_menu(message: types.Message):
+    u = message.chat
+    bot.reply_to(message, config['BOT']['HELP_MESSAGE'])
+    logging.info('/help from %s:%s', u.id, u.first_name)
 
 
 @bot.message_handler(commands=['commands'])
