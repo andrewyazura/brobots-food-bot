@@ -30,7 +30,7 @@ logging.basicConfig(filename=config['LOG_PATH'],
 get_data_process = multiprocessing.Process(
     target=execute_at, args=(config['ASK_TIME'], get_food_orders, True, (bot, db, config, True)))
 send_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['SEND_TIME'], send_food_orders, True, (bot, db, config)))
+    target=execute_at, args=(config['SEND_TIME'], send_food_orders, True, (config)))
 
 
 @bot.message_handler(commands=['start', 'help'])
