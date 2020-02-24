@@ -28,18 +28,18 @@ logging.basicConfig(filename=config['LOG_PATH'],
                     level=logging.DEBUG)
 
 get_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['ASK_TIME'], get_food_orders, True, (bot, db, config)))
+    target=execute_at, args=(config['ASK_TIME'], get_food_orders, True, (bot, db, config, True)))
 send_data_process = multiprocessing.Process(
     target=execute_at, args=(config['SEND_TIME'], send_food_orders, True, (bot, db, config)))
 
 
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=['start'])
 def start_menu(message: types.Message):
     bot.reply_to(message, config['BOT']['START_MESSAGE'])
     u = message.chat
     user_str = u.first_name + (u.last_name if u.last_name else '')
 
-    logging.info('/start or /help from %s:%s', u.id, user_str)
+    logging.info('/start from %s:%s', u.id, user_str)
 
     if not is_user(u.id, db) and not is_admin(u.id, config):
         add_user_keyboard = types.InlineKeyboardMarkup(row_width=1)
@@ -55,9 +55,17 @@ def start_menu(message: types.Message):
                        kwargs={'reply_markup': add_user_keyboard})
 
 
+@bot.message_handler(commands=['help'])
+def help_menu(message: types.Message):
+    u = message.chat
+    bot.reply_to(message, config['BOT']['HELP_MESSAGE'])
+    logging.info('/help from %s:%s', u.id, u.first_name)
+
+
 @bot.message_handler(commands=['commands'])
 def admin_menu(message: types.Message):
-    bot.send_message(message.chat.id, config['BOT']['ADMIN_COMMANDS'])
+    bot.send_message(
+        message.chat.id, config['BOT']['ADMIN_COMMANDS'], parse_mode='markdown')
 
     logging.info('/commands from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -83,12 +91,18 @@ def send_logs(message: types.Message):
 @bot.message_handler(commands=['ask_now'])
 def request_orders(message: types.Message):
     u_id = message.chat.id
+    args = extract_args(message.text)
+    clear = args[0] if args else '0'
 
     if not is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
-    get_food_orders(bot, db, config)
+    if not clear.isdigit():
+        bot.send_message(u_id, config['BOT']['INVALID_SYNTAX'])
+        return
+
+    get_food_orders(bot, db, config, int(clear))
     bot.send_message(u_id, config['BOT']['SUCCESS'])
 
     logging.info('/ask_now from %s:%s', message.chat.id,
@@ -156,6 +170,24 @@ def delete_user(message: types.Message):
         bot.send_message(u_id, config['BOT']['NO_USER'])
 
     logging.info('/del_user from %s:%s', message.chat.id,
+                 message.chat.first_name)
+
+
+@bot.message_handler(commands=['report', 'troubleshoot'])
+def troubleshoot(message: types.Message):
+    command_args = extract_args(message.text, (' ', 1))
+    chat = message.chat
+
+    if len(command_args) != 1:
+        bot.send_message(chat.id, config['BOT']['INVALID_SYNTAX'])
+        return
+
+    bot.send_message(chat.id, config['BOT']['TROUBLESHOOTING'])
+
+    send_to_developers(bot, config, command_args[0] +
+                       '\n{0}:{1}'.format(chat.id, chat.username))
+
+    logging.info('/report or /troubleshoot from %s:%s', message.chat.id,
                  message.chat.first_name)
 
 

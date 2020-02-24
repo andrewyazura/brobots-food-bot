@@ -35,6 +35,7 @@ config = {
         'ALREADY_EXISTS': 'User is already in DB',
         'NO_USER': 'No such user',
 
+        'TROUBLESHOOTING': 'Developer will be notified!',
         'GARBAGE_RESPONSE': 'Stop sending this!',
 
         'KEYBOARDS': {
@@ -42,22 +43,30 @@ config = {
             'NO': 'No...',
             'ADD_TO_DB': 'Add'
         },
+        'HELP_MESSAGE': '''Commands:
+
+/report <message> - report bug in bot
+        ''',
         'ADMIN_COMMANDS': '''Commands:
 
 /users - all users
 
-/del_user <id> - remove user by id
+/del\_user <id> - remove user by id
 
 /orders - all orders
 
-/clear_orders - clear orders
+/clear\_orders - clear orders
 
-/ask_now - send order requests now
+/ask\_now _<clear>_ - request orders now
+_clear_:
+    1 - clear orders before request
+    0 - don't clear
 
 /logs - view logs file
         '''
     },
-    'ADMINS': ['admin_id', 'another_one']
+    'ADMINS': ['admin_id', 'another_one'],
+    'DEVELOPERS': ['dev_id']
 }
 
 if __name__ == '__main__':

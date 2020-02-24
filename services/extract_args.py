@@ -1,2 +1,2 @@
-def extract_args(message_text: str):
-    return message_text.split()[1:]
+def extract_args(message_text: str, args=(), kwargs={}):
+    return message_text.split(*args, **kwargs)[1:]
