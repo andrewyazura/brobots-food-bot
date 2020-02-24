@@ -9,6 +9,7 @@ from pprint import pprint
 
 def execute_at(wake_time: datetime.time, callback, only_business, args=(), kwargs={}):
     while True:
+        time.sleep(0.9)
         now = datetime.datetime.now()
 
         if only_business and not is_business_day(now):
