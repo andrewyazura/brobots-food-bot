@@ -35,6 +35,7 @@ config = {
         'ALREADY_EXISTS': 'User is already in DB',
         'NO_USER': 'No such user',
 
+        'TROUBLESHOOTING': 'Developer will be notified!',
         'GARBAGE_RESPONSE': 'Stop sending this!',
 
         'KEYBOARDS': {
@@ -64,7 +65,8 @@ _clear_:
 /logs - view logs file
         '''
     },
-    'ADMINS': ['admin_id', 'another_one']
+    'ADMINS': ['admin_id', 'another_one'],
+    'DEVELOPERS': ['dev_id']
 }
 
 if __name__ == '__main__':
