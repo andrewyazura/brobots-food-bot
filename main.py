@@ -37,7 +37,7 @@ send_data_process = multiprocessing.Process(
 def start_menu(message: types.Message):
     bot.reply_to(message, config['BOT']['START_MESSAGE'])
     u = message.chat
-    user_str = u.first_name + (u.last_name if u.last_name else '')
+    user_str = generate_user_str(u)
 
     logging.info('/start from %s:%s', u.id, user_str)
 
@@ -60,6 +60,36 @@ def help_menu(message: types.Message):
     u = message.chat
     bot.reply_to(message, config['BOT']['HELP_MESSAGE'])
     logging.info('/help from %s:%s', u.id, u.first_name)
+
+
+@bot.message_handler(commands=['change_order', 'ask_me'])
+def reorder(message: types.Message):
+    u = message.chat
+
+    get_order(bot, config, {
+        'telegram_id': u.id,
+        'name': generate_user_str(u)
+    })
+
+    logging.info('/change_order or /ask_me from %s:%s', u.id, u.first_name)
+
+
+@bot.message_handler(commands=['report', 'troubleshoot'])
+def troubleshoot(message: types.Message):
+    command_args = extract_args(message.text, (' ', 1))
+    chat = message.chat
+
+    if len(command_args) != 1:
+        bot.send_message(chat.id, config['BOT']['INVALID_SYNTAX'])
+        return
+
+    bot.send_message(chat.id, config['BOT']['TROUBLESHOOTING'])
+
+    send_to_developers(bot, config, command_args[0] +
+                       '\n{0}:{1}'.format(chat.id, chat.username))
+
+    logging.info('/report or /troubleshoot from %s:%s', message.chat.id,
+                 message.chat.first_name)
 
 
 @bot.message_handler(commands=['commands'])
@@ -170,24 +200,6 @@ def delete_user(message: types.Message):
         bot.send_message(u_id, config['BOT']['NO_USER'])
 
     logging.info('/del_user from %s:%s', message.chat.id,
-                 message.chat.first_name)
-
-
-@bot.message_handler(commands=['report', 'troubleshoot'])
-def troubleshoot(message: types.Message):
-    command_args = extract_args(message.text, (' ', 1))
-    chat = message.chat
-
-    if len(command_args) != 1:
-        bot.send_message(chat.id, config['BOT']['INVALID_SYNTAX'])
-        return
-
-    bot.send_message(chat.id, config['BOT']['TROUBLESHOOTING'])
-
-    send_to_developers(bot, config, command_args[0] +
-                       '\n{0}:{1}'.format(chat.id, chat.username))
-
-    logging.info('/report or /troubleshoot from %s:%s', message.chat.id,
                  message.chat.first_name)
 
 

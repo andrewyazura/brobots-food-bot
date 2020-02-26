@@ -45,6 +45,8 @@ config = {
         },
         'HELP_MESSAGE': '''Commands:
 
+/ask_me - change your mind
+
 /report <message> - report bug in bot
         ''',
         'ADMIN_COMMANDS': '''Commands:
