@@ -167,7 +167,7 @@ def send_orders(message: types.Message):
         return
 
     bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
-                     services.generate_users_str(db, config, with_orders=True))
+                     services.generate_users_str(db, user_query, config, with_orders=True))
 
     logging.info('/orders from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -198,7 +198,7 @@ def manage_users(message: types.Message):
         return
 
     bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
-                     services.generate_users_str(db, config, with_ids=True))
+                     services.generate_users_str(db, user_query, config, with_ids=True))
 
     logging.info('/users from %s:%s', message.chat.id,
                  message.chat.first_name)
