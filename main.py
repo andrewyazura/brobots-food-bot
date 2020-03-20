@@ -9,7 +9,7 @@ import telebot
 import tinydb
 from telebot import types
 
-from services import *
+import services
 from config import config
 
 if not os.path.exists(config['DB_PATH']):
@@ -28,20 +28,20 @@ logging.basicConfig(filename=config['LOG_PATH'],
                     level=logging.DEBUG)
 
 get_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['ASK_TIME'], get_food_orders, True, (bot, db, config, True)))
+    target=services.execute_at, args=(config['ASK_TIME'], services.get_food_orders, True, (bot, db, config, True)))
 send_data_process = multiprocessing.Process(
-    target=execute_at, args=(config['SEND_TIME'], send_food_orders, True, (bot, db, config)))
+    target=services.execute_at, args=(config['SEND_TIME'], services.send_food_orders, True, (bot, db, config)))
 
 
 @bot.message_handler(commands=['start'])
 def start_menu(message: types.Message):
     bot.reply_to(message, config['BOT']['START_MESSAGE'])
     u = message.chat
-    user_str = generate_user_str(u)
+    user_str = services.generate_user_str(u)
 
     logging.info('/start from %s:%s', u.id, user_str)
 
-    if not is_user(u.id, db) and not is_admin(u.id, config):
+    if not services.is_user(u.id, db):
         add_user_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_user_keyboard.add(
             types.InlineKeyboardButton(
@@ -49,15 +49,20 @@ def start_menu(message: types.Message):
                 callback_data=f'{u.id}:{user_str}'
             ))
 
-        send_to_admins(bot, config,
-                       config['BOT']['NEW_USER'] +
-                       f' {u.id}, {u.username}, {user_str}',
-                       kwargs={'reply_markup': add_user_keyboard})
+        services.send_to_admins(bot, config,
+                                config['BOT']['NEW_USER'] +
+                                f' {u.id}, {u.username}, {user_str}',
+                                kwargs={'reply_markup': add_user_keyboard})
 
 
 @bot.message_handler(commands=['help'])
 def help_menu(message: types.Message):
     u = message.chat
+
+    if not services.is_user(u.id, db):
+        bot.reply_to(message, config['BOT']['NOT_REGISTERED'])
+        return
+
     bot.reply_to(message, config['BOT']['HELP_MESSAGE'])
     logging.info('/help from %s:%s', u.id, u.first_name)
 
@@ -66,9 +71,13 @@ def help_menu(message: types.Message):
 def reorder(message: types.Message):
     u = message.chat
 
-    get_order(bot, config, {
+    if not services.is_user(u.id, db):
+        bot.reply_to(message, config['BOT']['NOT_REGISTERED'])
+        return
+
+    services.get_order(bot, config, {
         'telegram_id': u.id,
-        'name': generate_user_str(u)
+        'name': services.generate_user_str(u)
     })
 
     logging.info('/change_order or /ask_me from %s:%s', u.id, u.first_name)
@@ -76,8 +85,12 @@ def reorder(message: types.Message):
 
 @bot.message_handler(commands=['report', 'troubleshoot'])
 def troubleshoot(message: types.Message):
-    command_args = extract_args(message.text, (' ', 1))
+    command_args = services.extract_args(message.text, (' ', 1))
     chat = message.chat
+
+    if not services.is_user(chat.id, db):
+        bot.reply_to(message, config['BOT']['NOT_REGISTERED'])
+        return
 
     if len(command_args) != 1:
         bot.send_message(chat.id, config['BOT']['INVALID_SYNTAX'])
@@ -85,8 +98,8 @@ def troubleshoot(message: types.Message):
 
     bot.send_message(chat.id, config['BOT']['TROUBLESHOOTING'])
 
-    send_to_developers(bot, config, command_args[0] +
-                       '\n{0}:{1}'.format(chat.id, chat.username))
+    services.send_to_developers(bot, config, command_args[0] +
+                                '\n{0}:{1}'.format(chat.id, chat.username))
 
     logging.info('/report or /troubleshoot from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -94,8 +107,14 @@ def troubleshoot(message: types.Message):
 
 @bot.message_handler(commands=['commands'])
 def admin_menu(message: types.Message):
+    u_id = message.chat.id
+
+    if not services.is_admin(u_id, config):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
     bot.send_message(
-        message.chat.id, config['BOT']['ADMIN_COMMANDS'], parse_mode='markdown')
+        u_id, config['BOT']['ADMIN_COMMANDS'], parse_mode='markdown')
 
     logging.info('/commands from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -105,7 +124,7 @@ def admin_menu(message: types.Message):
 def send_logs(message: types.Message):
     u_id = message.chat.id
 
-    if not is_admin(u_id, config):
+    if not services.is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
@@ -121,10 +140,10 @@ def send_logs(message: types.Message):
 @bot.message_handler(commands=['ask_now'])
 def request_orders(message: types.Message):
     u_id = message.chat.id
-    args = extract_args(message.text)
+    args = services.extract_args(message.text)
     clear = args[0] if args else '0'
 
-    if not is_admin(u_id, config):
+    if not services.is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
@@ -132,7 +151,7 @@ def request_orders(message: types.Message):
         bot.send_message(u_id, config['BOT']['INVALID_SYNTAX'])
         return
 
-    get_food_orders(bot, db, config, int(clear))
+    services.get_food_orders(bot, db, config, int(clear))
     bot.send_message(u_id, config['BOT']['SUCCESS'])
 
     logging.info('/ask_now from %s:%s', message.chat.id,
@@ -143,12 +162,12 @@ def request_orders(message: types.Message):
 def send_orders(message: types.Message):
     u_id = message.chat.id
 
-    if not is_admin(u_id, config):
+    if not services.is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
     bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
-                     generate_users_str(db, config, with_orders=True))
+                     services.generate_users_str(db, user_query, config, with_orders=True))
 
     logging.info('/orders from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -156,9 +175,15 @@ def send_orders(message: types.Message):
 
 @bot.message_handler(commands=['clear_orders'])
 def clear(message: types.Message):
-    clear_orders(db)
+    u_id = message.chat.id
 
-    bot.send_message(message.chat.id, config['BOT']['SUCCESS'])
+    if not services.is_admin(u_id, config):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
+    services.clear_orders(db)
+
+    bot.send_message(u_id, config['BOT']['SUCCESS'])
 
     logging.info('/clear_orders from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -168,12 +193,12 @@ def clear(message: types.Message):
 def manage_users(message: types.Message):
     u_id = message.chat.id
 
-    if not is_admin(u_id, config):
+    if not services.is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
     bot.send_message(u_id, config['BOT']['USERS_LIST_TITLE'] +
-                     generate_users_str(db, config, with_ids=True))
+                     services.generate_users_str(db, user_query, config, with_ids=True))
 
     logging.info('/users from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -181,10 +206,10 @@ def manage_users(message: types.Message):
 
 @bot.message_handler(commands=['del_user'])
 def delete_user(message: types.Message):
-    command_args = extract_args(message.text)
+    command_args = services.extract_args(message.text)
     u_id = message.chat.id
 
-    if not is_admin(u_id, config):
+    if not services.is_admin(u_id, config):
         bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
         return
 
@@ -192,7 +217,7 @@ def delete_user(message: types.Message):
         bot.send_message(u_id, config['BOT']['INVALID_SYNTAX'])
         return
 
-    if is_user(command_args[0], db):
+    if services.is_user(command_args[0], db):
         db.remove(tinydb.where('telegram_id') == command_args[0])
         bot.send_message(u_id, config['BOT']['SUCCESS'])
 
