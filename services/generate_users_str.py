@@ -1,4 +1,4 @@
-def generate_users_str(db, user_query, config, with_orders=False, with_ids=False):
+def generate_users_str(db, config, with_orders=False, with_ids=False):
     base = ''
 
     for user in db:
@@ -11,7 +11,7 @@ def generate_users_str(db, user_query, config, with_orders=False, with_ids=False
     if not len(db):
         return config['BOT']['EMPTY']
 
-    total_orders = db.count(user_query.order_food == True)
+    total_orders = base.count('True')
 
     base += '\n' + config['BOT']['TOTAL_USERS'] + str(len(db))
     base += '\n' + config['BOT']['TOTAL_ORDERS'] + \
