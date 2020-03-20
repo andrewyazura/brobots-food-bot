@@ -41,7 +41,7 @@ def start_menu(message: types.Message):
 
     logging.info('/start from %s:%s', u.id, user_str)
 
-    if not services.is_user(u.id, db) and not services.is_admin(u.id, config):
+    if not services.is_user(u.id, db):
         add_user_keyboard = types.InlineKeyboardMarkup(row_width=1)
         add_user_keyboard.add(
             types.InlineKeyboardButton(
@@ -58,6 +58,11 @@ def start_menu(message: types.Message):
 @bot.message_handler(commands=['help'])
 def help_menu(message: types.Message):
     u = message.chat
+
+    if not services.is_user(u.id, db):
+        bot.reply_to(message, config['BOT']['NOT_REGISTERED'])
+        return
+
     bot.reply_to(message, config['BOT']['HELP_MESSAGE'])
     logging.info('/help from %s:%s', u.id, u.first_name)
 
@@ -65,6 +70,10 @@ def help_menu(message: types.Message):
 @bot.message_handler(commands=['change_order', 'ask_me'])
 def reorder(message: types.Message):
     u = message.chat
+
+    if not services.is_user(u.id, db):
+        bot.reply_to(message, config['BOT']['NOT_REGISTERED'])
+        return
 
     services.get_order(bot, config, {
         'telegram_id': u.id,
@@ -78,6 +87,10 @@ def reorder(message: types.Message):
 def troubleshoot(message: types.Message):
     command_args = services.extract_args(message.text, (' ', 1))
     chat = message.chat
+
+    if not services.is_user(chat.id, db):
+        bot.reply_to(message, config['BOT']['NOT_REGISTERED'])
+        return
 
     if len(command_args) != 1:
         bot.send_message(chat.id, config['BOT']['INVALID_SYNTAX'])
@@ -94,8 +107,14 @@ def troubleshoot(message: types.Message):
 
 @bot.message_handler(commands=['commands'])
 def admin_menu(message: types.Message):
+    u_id = message.chat.id
+
+    if not services.is_admin(u_id, config):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
     bot.send_message(
-        message.chat.id, config['BOT']['ADMIN_COMMANDS'], parse_mode='markdown')
+        u_id, config['BOT']['ADMIN_COMMANDS'], parse_mode='markdown')
 
     logging.info('/commands from %s:%s', message.chat.id,
                  message.chat.first_name)
@@ -156,9 +175,15 @@ def send_orders(message: types.Message):
 
 @bot.message_handler(commands=['clear_orders'])
 def clear(message: types.Message):
+    u_id = message.chat.id
+
+    if not services.is_admin(u_id, config):
+        bot.send_message(u_id, config['BOT']['NO_PERMISSION'])
+        return
+
     services.clear_orders(db)
 
-    bot.send_message(message.chat.id, config['BOT']['SUCCESS'])
+    bot.send_message(u_id, config['BOT']['SUCCESS'])
 
     logging.info('/clear_orders from %s:%s', message.chat.id,
                  message.chat.first_name)

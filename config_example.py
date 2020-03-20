@@ -13,12 +13,11 @@ config = {
     'BOT': {
         'TOKEN': 'your_token',
         'START_MESSAGE': 'Hello world',
-        'ASK_MESSAGE': 'How are you?',
+        'ASK_MESSAGE': 'Do you want to order?',
 
         'ORDER_TRUE': 'Orderd!',
         'ORDER_FALSE': 'Not ordered',
 
-        'ACCEPTED': 'Great!',
         'ADDED': 'Admin added you!',
 
         'SUCCESS': 'Everything is fine!',
@@ -36,6 +35,7 @@ config = {
         'NO_USER': 'No such user',
 
         'TROUBLESHOOTING': 'Developer will be notified!',
+        'NOT_REGISTERED': 'You\'re not registered! Use /start first and wait until admins submit you',
         'GARBAGE_RESPONSE': 'Stop sending this!',
 
         'KEYBOARDS': {
@@ -49,7 +49,7 @@ config = {
 
 /report <message> - report bug in bot
         ''',
-        'ADMIN_COMMANDS': '''Commands:
+        'ADMIN_COMMANDS': r'''Commands:
 
 /users - all users
 
